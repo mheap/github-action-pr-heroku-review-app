@@ -1,0 +1,9 @@
+name: 'Heroku Review Apps for contributors'
+description: 'Create a Heroku review app when a PR is raised by someone with write or admin access'
+author: 'Michael Heap'
+branding:
+  icon: 'book-open'
+  color: 'orange'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'

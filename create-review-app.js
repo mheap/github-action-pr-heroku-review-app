@@ -9,7 +9,7 @@ const tools = new Toolkit();
     name => {
       if (!process.env[name]) {
         log(`Missing required environment variable: ${name}`);
-        process.exit(0);
+        process.exit(1);
       }
     }
   );
@@ -17,7 +17,7 @@ const tools = new Toolkit();
   // Is this an event we want to respond to?
   if (tools.context.event !== "pull_request") {
     log("Not a pull_request. Skipping");
-    process.exit(0);
+    process.exit(1);
   }
 
   let requiredCollaboratorPermission = process.env.COLLABORATOR_PERMISSION;
@@ -47,7 +47,9 @@ const tools = new Toolkit();
 
   // If the user has permission, add a label so that we know it already has
   // a review app
-  if (tools.context.payload.action === "opened") {
+
+  let action = tools.context.payload.action;
+  if (['opened', 'synchronize'].indexOf(action) !== -1) {
     log("PR opened by collaborator");
     createReviewApp = true;
     await octokit.issues.addLabels(

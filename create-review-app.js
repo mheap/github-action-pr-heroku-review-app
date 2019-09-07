@@ -14,6 +14,8 @@ const tools = new Toolkit();
     }
   );
 
+  console.log(tools.context);
+
   // Is this an event we want to respond to?
   if (tools.context.event !== "pull_request") {
     log("Not a pull_request. Skipping");

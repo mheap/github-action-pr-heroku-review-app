@@ -95,8 +95,11 @@ Toolkit.run(
         if (e.statusCode !== 409) {
           throw e;
         }
+        tools.log.complete("Review app is already created");
       }
     }
+
+    tools.log.success("Action complete");
   },
   {
     event: [

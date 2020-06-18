@@ -6,6 +6,15 @@ const heroku = new Heroku({ token: process.env.HEROKU_API_TOKEN });
 // Run your GitHub Action!
 Toolkit.run(
   async (tools) => {
+    // If this was triggered by repository_dispatch, we expect the full
+    // payload in the POST request so let's redefine tools.context.payload with that
+    if (tools.context.event == "repository_dispatch") {
+      tools.context.payload = tools.context.payload.client_payload;
+      if (!tools.context.payload) {
+        tools.exit.failure("Invalid repository_dispatch payload sent");
+      }
+    }
+
     const pr = tools.context.payload.pull_request;
 
     // Required information
@@ -75,6 +84,21 @@ Toolkit.run(
     }
 
     if (createReviewApp) {
+      // If it's a fork, creating the review app will fail as there are no secrets available
+      // So we trigger a repository_dispatch instead
+      if (fork) {
+        tools.log.pending("Fork detected. Triggering as repository_dispatch");
+        await tools.github.repos.createDispatchEvent({
+          ...tools.context.repo,
+          event_type: `${tools.context.event}.${action}`,
+          client_payload: tools.context.payload,
+        });
+        tools.log.complete("repository_dispatch sent");
+        tools.log.success("Action complete");
+        return;
+      }
+
+      // Otherwise we can complete it in this run
       try {
         tools.log.pending("Creating review app");
         const resp = await heroku.post("/review-apps", {
@@ -103,6 +127,7 @@ Toolkit.run(
   },
   {
     event: [
+      "repository_dispatch",
       "pull_request.opened",
       "pull_request.synchronize",
       "pull_request.labeled",

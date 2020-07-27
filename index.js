@@ -80,7 +80,7 @@ Toolkit.run(
 
     let createReviewApp = false;
 
-    if (["opened", "synchronize"].indexOf(action) !== -1) {
+    if (["opened", "reopened", "synchronize"].indexOf(action) !== -1) {
       tools.log.info("PR opened by collaborator");
       createReviewApp = true;
       await tools.github.issues.addLabels({
@@ -137,6 +137,7 @@ Toolkit.run(
   {
     event: [
       "pull_request.opened",
+      "pull_request.reopened",
       "pull_request.synchronize",
       "pull_request.labeled",
       "pull_request.closed",

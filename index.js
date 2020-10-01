@@ -14,6 +14,7 @@ Toolkit.run(
     const version = pr.head.sha;
     const fork = pr.head.repo.fork;
     const pr_number = pr.number;
+    const repo_url = pr.head.repo.html_url;
     const source_url = `${pr.head.repo.html_url}/tarball/${branch}`;
 
     let fork_repo_id;
@@ -124,6 +125,9 @@ Toolkit.run(
             },
             fork_repo_id,
             pr_number,
+            environment: {
+              GIT_REPO_URL: repo_url,
+            },
           },
         });
         tools.log.complete("Created review app");

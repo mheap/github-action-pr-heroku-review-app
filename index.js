@@ -9,6 +9,7 @@ Toolkit.run(
     const pr = tools.context.payload.pull_request;
 
     // Required information
+    const event = tools.context.event;
     const branch = pr.head.ref;
     const version = pr.head.sha;
     const fork = pr.head.repo.fork;
@@ -101,8 +102,11 @@ Toolkit.run(
 
     if (createReviewApp) {
       // If it's a fork, creating the review app will fail as there are no secrets available
-      if (fork) {
+      if (fork && event == "pull_request") {
         tools.log.pending("Fork detected. Exiting");
+        tools.log.pending(
+          "If you would like to support PRs from forks, use the pull_request_target event"
+        );
         tools.log.success("Action complete");
         return;
       }
@@ -141,6 +145,11 @@ Toolkit.run(
       "pull_request.synchronize",
       "pull_request.labeled",
       "pull_request.closed",
+      "pull_request_target.opened",
+      "pull_request_target.reopened",
+      "pull_request_target.synchronize",
+      "pull_request_target.labeled",
+      "pull_request_target.closed",
     ],
     secrets: ["GITHUB_TOKEN", "HEROKU_API_TOKEN", "HEROKU_PIPELINE_ID"],
   }

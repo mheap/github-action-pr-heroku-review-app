@@ -1,7 +1,7 @@
 {
   "name": "heroku-review-app",
   "private": true,
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "start": "node ./index.js",
     "test": "jest",

@@ -1,8 +1,10 @@
 name: Heroku Review Application
-description: Create a Heroku review app when a PR is raised by someone with write or admin access
+description: >-
+  Create a Heroku review app when a PR is raised by someone with write or admin
+  access
 runs:
-  using: docker
-  image: Dockerfile
+  using: node12
+  main: dist/index.js
 branding:
   icon: book-open
   color: orange

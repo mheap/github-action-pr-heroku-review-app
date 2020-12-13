@@ -9,6 +9,8 @@ name: Heroku Review Application
 on:
   pull_request:
     types: [opened, reopened, synchronize, labeled, closed]
+  pull_request_target:
+    types: [opened, reopened, synchronize, labeled, closed]
 
 jobs:
   heroku-review-application:

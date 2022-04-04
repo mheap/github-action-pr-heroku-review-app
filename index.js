@@ -105,6 +105,9 @@ async function run() {
         if ('pending' === app.status || 'creating' === app.status) {
           return false;
         }
+        if ('deleting' === app.status) {
+          throw new Error(`Unexpected app status: "${app.status}" - ${app.message} (error status: ${app.error_status})`);
+        }
         if (!app.app) {
           throw new Error(`Unexpected app status: "${app.status}"`);
         }

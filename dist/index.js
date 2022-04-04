@@ -1405,9 +1405,6 @@ async function run() {
       action,
       eventName,
       payload: {
-        label: {
-          name: newLabelAddedName,
-        },
         pull_request: {
           head: {
             ref: branch,
@@ -1577,6 +1574,13 @@ async function run() {
     if ('labeled' === action) {
       core.startGroup('PR labelled');
       core.debug('Checking PR label...');
+      const {
+        payload: {
+          label: {
+            name: newLabelAddedName,
+          },
+        },
+      } = github.context;
       if (newLabelAddedName === prLabel) {
         core.info(`Checked PR label: "${newLabelAddedName}", so need to create review app...`);
         await createReviewApp();

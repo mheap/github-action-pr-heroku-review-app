@@ -1379,9 +1379,6 @@ const core = __webpack_require__(470);
 const github = __webpack_require__(469);
 const { DateTime } = __webpack_require__(317);
 
-// const HEROKU_PIPELINE_ID = 'b3db2bf0-087c-49a5-afa8-4f6b24a3ad75';
-// const HEROKU_API_TOKEN = '740222ab-5378-4850-8b50-41e094cf50d1';
-
 const VALID_EVENT = 'pull_request';
 
 async function run() {
@@ -1514,7 +1511,7 @@ async function run() {
         core.startGroup('Create review app');
         const body = {
           branch,
-          pipeline: process.env.HEROKU_PIPELINE_ID,
+          pipeline: herokuPipelineId,
           source_blob: {
             url: sourceUrl,
             version,

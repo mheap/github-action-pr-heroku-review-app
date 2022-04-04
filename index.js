@@ -125,7 +125,7 @@ async function run() {
         if (!build) {
           core.error(`Could not find build matching version ${version}.`);
           core.setFailed(`No existing build for app ID ${appId} matches version ${version}`);
-          return;
+          throw new Error(`Unexpected build status: "${status}" yet no matching build found`);
         }
         core.info(`Found build matching version ${version} OK: ${JSON.stringify(build)}`);
 

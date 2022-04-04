@@ -1,5 +1,12 @@
 {
-  "name": "@launchgood/github-action-pr-heroku-review-app",
+  "name": "@matmar10/pr-heroku-review-app",
+  "description": "Automatically deploy a Heroku review app for each PR & ensure the review app stays up to date.",
+  "author": "Matthew J Martin <matthew.mar10@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:matmar10/pr-heroku-review-app.git"
+  },
   "main": "index.js",
   "scripts": {
     "build": "ncc build index.js",

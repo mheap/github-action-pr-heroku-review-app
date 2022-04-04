@@ -58,62 +58,6 @@ async function run() {
     const sourceUrl = `${repoHtmlUrl}/tarball/${version}`;
     const forkRepoId = forkRepo ? repoId : undefined;
 
-    // const waitReviewAppUpdated = async (reviewApp) => {
-    const waitReviewAppUpdated = async () => {
-      core.startGroup('Ensure PR is up to date');
-      // const reviewAppUpdatedAt = DateTime.fromISO(reviewApp.updated_at);
-
-      // core.debug(`Comparing review app updated "${reviewAppUpdatedAt}" vs review app updated "${prUpdatedAt}"`);
-      // if (reviewAppUpdatedAt > prUpdatedAt) {
-      //   core.info('Review app updated after PR; OK.');
-      //   core.endGroup();
-      //   return;
-      // }
-      // core.info('Review app updated before PR; need to wait for review app.');
-
-      core.debug(`Fetching latest builds for pipeline ${herokuPipelineId}...`);
-      const latestBuilds = await heroku.get(`/pipelines/${herokuPipelineId}/latest-builds`);
-      core.debug(`Fetched latest builds for pipeline ${herokuPipelineId} OK: ${latestBuilds.length} builds found.`);
-
-      core.debug(`Finding build matching version ${version}...`);
-      const build = await latestBuilds.find(build => version === build.source_blob.version);
-      if (!build) {
-        core.error(`Could not find build matching version ${version}.`);
-        core.endGroup();
-        core.setFailed(`No existing build for pipeline ID ${herokuPipelineId} matches version ${version}`);
-        return;
-      }
-
-      core.info(`Found build matching version ${version} OK: ${JSON.stringify(build)}`);
-
-      const checkStatus = async (build) => {
-        core.debug(`Checking build status for build: ${JSON.stringify(build)}`);
-        const {
-          id,
-          app: {
-            id: appId,
-          },
-        } = build;
-        core.debug(`Checking build ${id} for app ${appId} status...`);
-        const { status } = await heroku.get(`/apps/${appId}/builds/${id}`);
-        core.info(`Checked build ${id} for app ${appId} status OK: ${status}`);
-        switch (status) {
-          case 'succeeded':
-            return true;
-          case 'pending':
-            return false;
-          default:
-            throw new Error(`Unexpected build status: "${status}"`);
-        }
-      };
-
-      let isFinished;
-      do {
-        isFinished = await checkStatus();
-      } while (!isFinished);
-      core.endGroup();
-    };
-
     const findReviewApp = async () => {
       core.startGroup('Find existing review app');
       core.debug('Listing review apps...');
@@ -134,6 +78,75 @@ async function run() {
       }
       core.endGroup();
       return app;
+    };
+
+    // const waitReviewAppUpdated = async (reviewApp) => {
+    const waitReviewAppUpdated = async () => {
+      core.startGroup('Ensure PR is up to date');
+
+      // const reviewAppUpdatedAt = DateTime.fromISO(reviewApp.updated_at);
+
+      // core.debug(`Comparing review app updated "${reviewAppUpdatedAt}" vs review app updated "${prUpdatedAt}"`);
+      // if (reviewAppUpdatedAt > prUpdatedAt) {
+      //   core.info('Review app updated after PR; OK.');
+      //   core.endGroup();
+      //   return;
+      // }
+      // core.info('Review app updated before PR; need to wait for review app.');
+
+      // core.debug(`Fetching latest builds for pipeline ${herokuPipelineId}...`);
+      // const latestBuilds = await heroku.get(`/pipelines/${herokuPipelineId}/latest-builds`);
+      // core.debug(`Fetched latest builds for pipeline ${herokuPipelineId} OK: ${latestBuilds.length} builds found.`);
+
+      const checkStatus = async () => {
+        const app = await findReviewApp();
+        // {"app":{"id":"07fe99d9-f288-4ba0-9f03-8e63ca045341"},"app_setup":{"id":"d601de2f-0e9e-4081-80c5-c672b177fd79"},"branch":"single-repo","fork_repo":null,"created_at":"2022-04-04T14:50:28+00:00","creator":{"id":"79fb2708-4dd2-464f-be0d-36796aaf445d"},"id":"093a5445-2472-497f-bf72-64af3950b316","pipeline":{"id":"***"},"pr_number":2,"status":"created","updated_at":"2022-04-04T14:53:58+00:00","wait_for_ci":false,"error_status":null,"message":null}
+        core.debug(`Checking build status for app: ${JSON.stringify(app)}`);
+        if ('pending' === app.status || 'creating' === app.status) {
+          return false;
+        }
+        if ('deleting' === app.status) {
+          throw new Error(`Unexpected app status: "${app.status}" - ${app.message} (error status: ${app.error_status})`);
+        }
+        if (!app.app) {
+          throw new Error(`Unexpected app status: "${app.status}"`);
+        }
+        const {
+          app: {
+            id: appId,
+          },
+          status,
+          error_status: errorStatus,
+        } = app;
+
+        core.debug(`Fetching latest builds for app ${appId}...`);
+        const latestBuilds = await heroku.get(`/apps/${appId}/builds`);
+        core.debug(`Fetched latest builds for pipeline ${appId} OK: ${latestBuilds.length} builds found.`);
+
+        core.debug(`Finding build matching version ${version}...`);
+        const build = await latestBuilds.find(build => version === build.source_blob.version);
+        if (!build) {
+          core.error(`Could not find build matching version ${version}.`);
+          core.setFailed(`No existing build for app ID ${appId} matches version ${version}`);
+          throw new Error(`Unexpected build status: "${status}" yet no matching build found`);
+        }
+        core.info(`Found build matching version ${version} OK: ${JSON.stringify(build)}`);
+
+        switch (build.status) {
+          case 'succeeded':
+            return true;
+          case 'pending':
+            return false;
+          default:
+            throw new Error(`Unexpected build status: "${status}": ${errorStatus || 'no error provided'}`);
+        }
+      };
+
+      let isFinished;
+      do {
+        isFinished = await checkStatus();
+      } while (!isFinished);
+      core.endGroup();
     };
 
     const createReviewApp = async () => {
@@ -182,8 +195,6 @@ async function run() {
         if (!app) {
           throw new Error('Previously got status 409 but no app found');
         }
-
-        await waitReviewAppUpdated(app);
         return app;
       }
     };
@@ -219,6 +230,7 @@ async function run() {
       if (newLabelAddedName === prLabel) {
         core.info(`Checked PR label: "${newLabelAddedName}", so need to create review app...`);
         await createReviewApp();
+        await waitReviewAppUpdated();
       } else {
         core.info('Checked PR label OK: "${newLabelAddedName}", no action required.');
       }
@@ -237,7 +249,6 @@ async function run() {
         core.endGroup();
       } else {
         core.error(`Could not find review app for PR #${prNumber}`);
-        core.endGroup();
         core.setFailed(`Action "closed", yet no existing review app for PR #${prNumber}`);
       }
       return;
@@ -250,12 +261,10 @@ async function run() {
     // });
 
     const app = await findReviewApp();
-    if (app) {
-      await waitReviewAppUpdated(app);
-    } else {
-      const app = await createReviewApp();
-      await waitReviewAppUpdated(app);
+    if (!app) {
+      await createReviewApp();
     }
+    await waitReviewAppUpdated();
 
     if (prLabel) {
       core.startGroup('Label PR');

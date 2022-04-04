@@ -68,7 +68,6 @@ async function run() {
       if (reviewAppUpdatedAt > prUpdatedAt) {
         core.info('Review app updated after PR; OK.');
         core.endGroup();
-        core.success('Action complete');
         return;
       }
       core.info('Review app updated before PR; need to wait for review app.');
@@ -162,7 +161,7 @@ async function run() {
           throw err;
         }
         // possibly build kicked off after this PR action began running
-        core.warn('Review app now seems to exist...');
+        core.warning('Review app now seems to exist after previously not...');
         core.endGroup();
 
         // just some sanity checking
@@ -190,8 +189,7 @@ async function run() {
     })}`);
 
     if (forkRepo) {
-      core.warn('No secrets are available for PRs in forked repos.');
-      core.success('Action complete');
+      core.notice('No secrets are available for PRs in forked repos.');
       return;
     }
 
@@ -225,7 +223,6 @@ async function run() {
         await heroku.delete(`/review-apps/${app.id}`);
         core.info('PR closed, deleted review app OK');
         core.endGroup();
-        core.success('Action complete');
       } else {
         core.error(`Could not find review app for PR #${prNumber}`);
         core.endGroup();
@@ -261,7 +258,6 @@ async function run() {
       core.debug('No label specified; will not label PR');
     }
 
-    core.success('Action complete');
   } catch (err) {
     core.error(err);
     core.setFailed(err.message);

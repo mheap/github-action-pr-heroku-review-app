@@ -149,7 +149,7 @@ async function run() {
             GIT_REPO_URL: repoHtmlUrl,
           },
         };
-        core.debug('Creating heroku review app...', body);
+        core.debug(`Creating heroku review app: ${JSON.stringify(body)}`);
         const app = await heroku.post('/review-apps', { body });
         core.info('Created review app OK:', app);
         core.endGroup();

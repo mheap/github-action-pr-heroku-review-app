@@ -1474,6 +1474,10 @@ async function run() {
       // const latestBuilds = await heroku.get(`/pipelines/${herokuPipelineId}/latest-builds`);
       // core.debug(`Fetched latest builds for pipeline ${herokuPipelineId} OK: ${latestBuilds.length} builds found.`);
 
+      const waitSeconds = secs => new Promise((resolve) => {
+        setTimeout(() => resolve, secs * 1000);
+      });
+
       const checkStatus = async () => {
         const app = await findReviewApp();
         // {"app":{"id":"07fe99d9-f288-4ba0-9f03-8e63ca045341"},"app_setup":{"id":"d601de2f-0e9e-4081-80c5-c672b177fd79"},"branch":"single-repo","fork_repo":null,"created_at":"2022-04-04T14:50:28+00:00","creator":{"id":"79fb2708-4dd2-464f-be0d-36796aaf445d"},"id":"093a5445-2472-497f-bf72-64af3950b316","pipeline":{"id":"***"},"pr_number":2,"status":"created","updated_at":"2022-04-04T14:53:58+00:00","wait_for_ci":false,"error_status":null,"message":null}
@@ -1521,6 +1525,7 @@ async function run() {
       let isFinished;
       do {
         isFinished = await checkStatus();
+        await waitSeconds(5000);
       } while (!isFinished);
       core.endGroup();
     };

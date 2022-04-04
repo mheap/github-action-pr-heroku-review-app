@@ -1,5 +1,5 @@
 {
-  "name": "@matmar10/pr-heroku-review-app",
+  "name": "pr-heroku-review-app",
   "description": "Automatically deploy a Heroku review app for each PR & ensure the review app stays up to date.",
   "author": "Matthew J Martin <matthew.mar10@gmail.com>",
   "license": "MIT",

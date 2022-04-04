@@ -149,7 +149,7 @@ async function run() {
       let isFinished;
       do {
         isFinished = await checkStatus();
-        await waitSeconds(5000);
+        await waitSeconds(5);
       } while (!isFinished);
       core.endGroup();
     };

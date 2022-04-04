@@ -1478,6 +1478,12 @@ async function run() {
         const app = await findReviewApp();
         // {"app":{"id":"07fe99d9-f288-4ba0-9f03-8e63ca045341"},"app_setup":{"id":"d601de2f-0e9e-4081-80c5-c672b177fd79"},"branch":"single-repo","fork_repo":null,"created_at":"2022-04-04T14:50:28+00:00","creator":{"id":"79fb2708-4dd2-464f-be0d-36796aaf445d"},"id":"093a5445-2472-497f-bf72-64af3950b316","pipeline":{"id":"***"},"pr_number":2,"status":"created","updated_at":"2022-04-04T14:53:58+00:00","wait_for_ci":false,"error_status":null,"message":null}
         core.debug(`Checking build status for app: ${JSON.stringify(app)}`);
+        if ('pending' === app) {
+          return false;
+        }
+        if (!app.app) {
+          return false;
+        }
         const {
           app: {
             id: appId,

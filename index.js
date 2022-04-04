@@ -6,7 +6,7 @@ const { DateTime } = require('luxon');
 // const HEROKU_PIPELINE_ID = 'b3db2bf0-087c-49a5-afa8-4f6b24a3ad75';
 // const HEROKU_API_TOKEN = '740222ab-5378-4850-8b50-41e094cf50d1';
 
-const VALID_EVENT = ['pull_request'];
+const VALID_EVENT = 'pull_request';
 
 async function run() {
   try {

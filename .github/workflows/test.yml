@@ -1,0 +1,21 @@
+---
+
+name: Action self-test
+
+on:
+  pull_request:
+    branches: [ '*' ]
+
+jobs:
+  test-action:
+    name: Create review app
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Test the action locally
+        uses: ./
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_label: Review App
+          heroku_api_token: ${{ secrets.HEROKU_API_TOKEN }}
+          heroku_pipeline_id: ${{ secrets.HEROKU_PIPELINE_ID }}

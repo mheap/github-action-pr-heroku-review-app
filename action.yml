@@ -1,8 +1,22 @@
 name: Heroku Review Application
+
 description: Create a Heroku review app when a PR is raised by someone with write or admin access
+
+inputs:
+  github_token:
+    required: true
+    description: Github access token
+  github_label:
+    required: false
+    description: Label to apply to PRs (or trigger builds when added to PR)
+    default: ''
+  heroku_api_token:
+    required: true
+    description: Heroku API token
+  heroku_pipeline_id:
+    required: true
+    description: The UUID of your herkou pipeline to create review app within
+
 runs:
-  using: docker
-  image: Dockerfile
-branding:
-  icon: book-open
-  color: orange
+  using: node12
+  main: dist/index.js

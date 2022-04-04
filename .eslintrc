@@ -1,11 +1,71 @@
 {
-    "parserOptions": {
-        "ecmaVersion": 8
-    },
     "plugins": [
-        "prettier"
+      "es-beautifier"
     ],
+    "extends": ["eslint:recommended", "plugin:es-beautifier/standard"],
+    "parserOptions": {
+      "ecmaVersion": 2018,
+      "sourceType": "script"
+    },
+    "env": {
+      "es6": true,
+      "node": true,
+      "jest": true
+    },
+    "globals": {},
     "rules": {
-        "prettier/prettier": "error"
+      "quotes": [
+        2,
+        "single"
+      ],
+      "no-undef": 2,
+      "no-unused-vars": 2,
+      "one-var": [
+        2,
+        {
+          "initialized": "never",
+          "uninitialized": "never"
+        }
+      ],
+      "curly": 2,
+      "camelcase": 0,
+      "eqeqeq": 2,
+      "indent": [
+        2,
+        2,
+        {
+          "SwitchCase": 1
+        }
+      ],
+      "lines-around-comment": [
+        "error", {
+          "allowBlockStart": true
+        }
+      ],
+      "no-use-before-define": [
+        2,
+        {
+          "functions": false
+        }
+      ],
+      "max-len": [
+        2,
+        {
+          "code": 200,
+          "ignoreComments": true
+        }
+      ],
+      "max-statements-per-line": 2,
+      "new-cap": ["error", {
+        "properties": false
+      }],
+      "no-eq-null": 2,
+      "no-var": 2,
+      "one-var-declaration-per-line": 2,
+      "prefer-const": 2,
+      "semi": 2,
+      "spaced-comment": ["error", "always", {
+        "exceptions": ["-"]
+      }]
     }
-}
+  }

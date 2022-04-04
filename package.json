@@ -1,17 +1,89 @@
 {
-  "name": "heroku-review-app",
-  "private": true,
-  "main": "dist/index.js",
+  "name": "@launchgood/github-action-pr-heroku-review-app",
+  "main": "index.js",
   "scripts": {
-    "start": "node ./index.js",
-    "test": "jest",
-    "build": "npx @vercel/ncc build && npx convert-action"
+    "build": "ncc build index.js",
+    "release": "release-it --ci",
+    "prerelease": "npm run build",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
+    "@actions/core": "^1.6.0",
+    "@actions/github": "^5.0.1",
     "actions-toolkit": "^4.0.0",
-    "heroku-client": "^3.1.0"
+    "heroku-client": "^3.1.0",
+    "luxon": "^2.3.1"
   },
   "devDependencies": {
-    "jest": "^25.2.7"
+    "@release-it/conventional-changelog": "^4.2.2",
+    "@zeit/ncc": "^0.22.3",
+    "eslint": "^8.12.0",
+    "eslint-plugin-es-beautifier": "^1.0.1",
+    "release-it": "^14.14.0"
+  },
+  "release-it": {
+    "ci": true,
+    "plugins": {
+      "@release-it/conventional-changelog": {
+        "infile": "CHANGELOG.md",
+        "preset": {
+          "name": "conventionalcommits",
+          "types": [
+            {
+              "type": "feat",
+              "section": "Features"
+            },
+            {
+              "type": "fix",
+              "section": "Bug Fixes"
+            },
+            {
+              "type": "perf",
+              "section": "Performance Improvements"
+            },
+            {
+              "type": "revert",
+              "section": "Reverts"
+            },
+            {
+              "type": "docs",
+              "section": "Documentation"
+            },
+            {
+              "type": "style",
+              "section": "Styles"
+            },
+            {
+              "type": "refactor",
+              "section": "Code Refactoring"
+            },
+            {
+              "type": "test",
+              "section": "Tests"
+            },
+            {
+              "type": "build",
+              "section": "Build System"
+            },
+            {
+              "type": "ci",
+              "section": "Continuous Integration"
+            }
+          ]
+        }
+      }
+    },
+    "git": {
+      "commit": true,
+      "tag": true,
+      "push": true,
+      "requireUpstream": false
+    },
+    "github": {
+      "release": true
+    },
+    "npm": {
+      "publish": true
+    }
   }
 }

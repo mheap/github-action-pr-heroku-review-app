@@ -1,7 +1,7 @@
 const Heroku = require('heroku-client');
 const core = require('@actions/core');
 const github = require('@actions/github');
-const { DateTime } = require('luxon');
+// const { DateTime } = require('luxon');
 
 const VALID_EVENT = 'pull_request';
 
@@ -37,7 +37,7 @@ async function run() {
             },
           },
           number: prNumber,
-          updated_at: prUpdatedAtRaw,
+          // updated_at: prUpdatedAtRaw,
         },
       },
       issue: {
@@ -45,6 +45,7 @@ async function run() {
       },
       repo,
     } = github.context;
+
     const {
       owner: repoOwner,
     } = repo;
@@ -53,28 +54,29 @@ async function run() {
       throw new Error(`Unexpected github event trigger: ${eventName}`);
     }
 
-    const prUpdatedAt = DateTime.fromISO(prUpdatedAtRaw);
+    // const prUpdatedAt = DateTime.fromISO(prUpdatedAtRaw);
     const sourceUrl = `${repoHtmlUrl}/tarball/${version}`;
     const forkRepoId = forkRepo ? repoId : undefined;
 
-    const waitReviewAppUpdated = async (reviewApp) => {
+    // const waitReviewAppUpdated = async (reviewApp) => {
+    const waitReviewAppUpdated = async () => {
       core.startGroup('Ensure PR is up to date');
-      const reviewAppUpdatedAt = DateTime.fromISO(reviewApp.updated_at);
+      // const reviewAppUpdatedAt = DateTime.fromISO(reviewApp.updated_at);
 
-      core.debug(`Comparing review app updated "${reviewAppUpdatedAt}" vs review app updated "${prUpdatedAt}"`);
-      if (reviewAppUpdatedAt > prUpdatedAt) {
-        core.info('Review app updated after PR; OK.');
-        core.endGroup();
-        return;
-      }
-      core.info('Review app updated before PR; need to wait for review app.');
+      // core.debug(`Comparing review app updated "${reviewAppUpdatedAt}" vs review app updated "${prUpdatedAt}"`);
+      // if (reviewAppUpdatedAt > prUpdatedAt) {
+      //   core.info('Review app updated after PR; OK.');
+      //   core.endGroup();
+      //   return;
+      // }
+      // core.info('Review app updated before PR; need to wait for review app.');
 
       core.debug(`Fetching latest builds for pipeline ${herokuPipelineId}...`);
       const latestBuilds = await heroku.get(`/pipelines/${herokuPipelineId}/latest-builds`);
       core.debug(`Fetched latest builds for pipeline ${herokuPipelineId} OK: ${latestBuilds.length} builds found.`);
 
       core.debug(`Finding build matching version ${version}...`);
-      const build = await latestBuilds.filter(build => version === build.source_blog.version);
+      const build = await latestBuilds.find(build => version === build.source_blob.version);
       if (!build) {
         core.error(`Could not find build matching version ${version}.`);
         core.endGroup();
@@ -82,16 +84,16 @@ async function run() {
         return;
       }
 
-      const {
-        id,
-        app: {
-          id: appId,
-        },
-        status,
-      } = build;
-      core.info(`Found build matching version ${version} OK: ${id} (status: ${status})`, build);
+      core.info(`Found build matching version ${version} OK: ${JSON.stringify(build)}`);
 
-      const checkStatus = async () => {
+      const checkStatus = async (build) => {
+        core.debug(`Checking build status for build: ${JSON.stringify(build)}`);
+        const {
+          id,
+          app: {
+            id: appId,
+          },
+        } = build;
         core.debug(`Checking build ${id} for app ${appId} status...`);
         const { status } = await heroku.get(`/apps/${appId}/builds/${id}`);
         core.info(`Checked build ${id} for app ${appId} status OK: ${status}`);
@@ -110,7 +112,6 @@ async function run() {
         isFinished = await checkStatus();
       } while (!isFinished);
       core.endGroup();
-      core.success('Action complete');
     };
 
     const findReviewApp = async () => {
@@ -122,6 +123,11 @@ async function run() {
       core.debug(`Finding review app for PR #${prNumber}...`);
       const app = reviewApps.find(app => app.pr_number === prNumber);
       if (app) {
+        const { status } = app;
+        if ('errored' === status) {
+          core.notice(`Found review app for PR #${prNumber} OK, but status is "${status}"`);
+          return null;
+        }
         core.info(`Found review app for PR #${prNumber} OK.`);
       } else {
         core.info(`No review app found for PR #${prNumber}`);
@@ -133,11 +139,21 @@ async function run() {
     const createReviewApp = async () => {
       try {
         core.startGroup('Create review app');
+
+        const archiveBody = {
+          owner: repoOwner,
+          repo: repo.repo,
+          ref: version,
+        };
+        core.debug(`Fetching archive: ${JSON.stringify(archiveBody)}`);
+        const { url: archiveUrl } = await octokit.rest.repos.downloadTarballArchive(archiveBody);
+        core.info(`Fetched archive OK: ${JSON.stringify(archiveUrl)}`);
+
         const body = {
           branch,
           pipeline: herokuPipelineId,
           source_blob: {
-            url: sourceUrl,
+            url: archiveUrl,
             version,
           },
           fork_repo_id: forkRepoId,
@@ -207,7 +223,6 @@ async function run() {
         core.info('Checked PR label OK: "${newLabelAddedName}", no action required.');
       }
       core.endGroup();
-      core.success('Action complete');
       return;
     }
 
@@ -238,7 +253,8 @@ async function run() {
     if (app) {
       await waitReviewAppUpdated(app);
     } else {
-      await createReviewApp();
+      const app = await createReviewApp();
+      await waitReviewAppUpdated(app);
     }
 
     if (prLabel) {
@@ -254,7 +270,6 @@ async function run() {
     } else {
       core.debug('No label specified; will not label PR');
     }
-
   } catch (err) {
     core.error(err);
     core.setFailed(err.message);

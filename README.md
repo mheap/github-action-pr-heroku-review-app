@@ -2,6 +2,11 @@
 
 Create a Heroku review app when a PR is raised by someone with write or admin access
 
+## TODO / Roadmap
+
+- [ ] Export info about the created build to be used later
+
+
 ## Usage
 
 ```yaml
@@ -18,8 +23,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Heroku Review Application
-        uses: mheap/github-action-pr-heroku-review-app@master
-        env:
+        uses: matmar10/pr-heroku-review-app@master
+        with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 

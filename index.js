@@ -57,6 +57,17 @@ async function run() {
     const sourceUrl = `${repoHtmlUrl}/tarball/${version}`;
     const forkRepoId = forkRepo ? repoId : undefined;
 
+    const getAppDetails = async id => heroku.get(`/apps/${id}`);
+
+    const outputAppDetails = (app) => {
+      const {
+        id: appId,
+        web_url: webUrl,
+      } = app;
+      core.setOutput('app_id  ', appId);
+      core.setOutput('app_web_url', webUrl);
+    };
+
     const findReviewApp = async () => {
       core.startGroup('Find existing review app');
       core.debug('Listing review apps...');
@@ -83,27 +94,11 @@ async function run() {
     const waitReviewAppUpdated = async () => {
       core.startGroup('Ensure PR is up to date');
 
-      // const reviewAppUpdatedAt = DateTime.fromISO(reviewApp.updated_at);
-
-      // core.debug(`Comparing review app updated "${reviewAppUpdatedAt}" vs review app updated "${prUpdatedAt}"`);
-      // if (reviewAppUpdatedAt > prUpdatedAt) {
-      //   core.info('Review app updated after PR; OK.');
-      //   core.endGroup();
-      //   return;
-      // }
-      // core.info('Review app updated before PR; need to wait for review app.');
-
-      // core.debug(`Fetching latest builds for pipeline ${herokuPipelineId}...`);
-      // const latestBuilds = await heroku.get(`/pipelines/${herokuPipelineId}/latest-builds`);
-      // core.debug(`Fetched latest builds for pipeline ${herokuPipelineId} OK: ${latestBuilds.length} builds found.`);
-
       const waitSeconds = secs => new Promise((resolve) => {
         setTimeout(() => resolve, secs * 1000);
       });
 
-      const checkStatus = async () => {
-        const app = await findReviewApp();
-        // {"app":{"id":"07fe99d9-f288-4ba0-9f03-8e63ca045341"},"app_setup":{"id":"d601de2f-0e9e-4081-80c5-c672b177fd79"},"branch":"single-repo","fork_repo":null,"created_at":"2022-04-04T14:50:28+00:00","creator":{"id":"79fb2708-4dd2-464f-be0d-36796aaf445d"},"id":"093a5445-2472-497f-bf72-64af3950b316","pipeline":{"id":"***"},"pr_number":2,"status":"created","updated_at":"2022-04-04T14:53:58+00:00","wait_for_ci":false,"error_status":null,"message":null}
+      const checkStatus = async (app) => {
         core.debug(`Checking build status for app: ${JSON.stringify(app)}`);
         if ('pending' === app.status || 'creating' === app.status) {
           return false;
@@ -145,12 +140,15 @@ async function run() {
         }
       };
 
+      let reviewApp;
       let isFinished;
       do {
-        isFinished = await checkStatus();
+        reviewApp = await findReviewApp();
+        isFinished = await checkStatus(reviewApp);
         await waitSeconds(5);
       } while (!isFinished);
       core.endGroup();
+      return getAppDetails(reviewApp.app.id);
     };
 
     const createReviewApp = async () => {
@@ -234,7 +232,8 @@ async function run() {
       if (newLabelAddedName === prLabel) {
         core.info(`Checked PR label: "${newLabelAddedName}", so need to create review app...`);
         await createReviewApp();
-        await waitReviewAppUpdated();
+        const app = await waitReviewAppUpdated();
+        outputAppDetails(app);
       } else {
         core.info('Checked PR label OK: "${newLabelAddedName}", no action required.');
       }
@@ -269,6 +268,7 @@ async function run() {
       await createReviewApp();
     }
     await waitReviewAppUpdated();
+    outputAppDetails(app);
 
     if (prLabel) {
       core.startGroup('Label PR');

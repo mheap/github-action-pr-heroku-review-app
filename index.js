@@ -1,7 +1,6 @@
 const Heroku = require('heroku-client');
 const core = require('@actions/core');
 const github = require('@actions/github');
-// const { DateTime } = require('luxon');
 
 const VALID_EVENT = 'pull_request';
 
